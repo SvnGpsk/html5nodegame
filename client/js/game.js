@@ -8,8 +8,11 @@ Img.player = new Image();
 Img.player.src = '/client/img/player.png';
 Img.bullet = new Image();
 Img.bullet.src = '/client/img/bullet.png';
-Img.map = new Image();
-Img.map.src = '/client/img/map.png';
+Img.map = {};
+Img.map['galaxy'] = new Image();
+Img.map['galaxy'].src = '/client/img/map.png';
+Img.map['field'] = new Image();
+Img.map['field'].src = '/client/img/map.png';
 
 var WIDTH = 500;
 var HEIGHT = 500;
@@ -30,9 +33,14 @@ var Player = function (initPack) {
     self.hp = initPack.hp;
     self.hpMax = initPack.hpMax;
     self.score = initPack.score;
+    self.map = initPack.map;
+
     Player.list[self.id] = self;
 
     self.draw = function () {
+        if(Player.list[selfId].map !== self.map){
+            return;
+        }
         var x = self.x - Player.list[selfId].x + WIDTH / 2;
         var y = self.y - Player.list[selfId].y + HEIGHT / 2;
 
@@ -57,9 +65,13 @@ var Bullet = function (initPack) {
     self.id = initPack.id;
     self.x = initPack.x;
     self.y = initPack.y;
+    self.map = initPack.map;
     Bullet.list[self.id] = self;
 
     self.draw = function () {
+        if(Player.list[selfId].map !== self.map){
+            return;
+        }
         var width = Img.player.width / 8;
         var height = Img.player.height / 8;
 
@@ -148,9 +160,10 @@ setInterval(function () {
 }, 40);
 
 var drawMap = function () {
-    var x = WIDTH / 2 - Player.list[selfId].x;
-    var y = HEIGHT / 2 - Player.list[selfId].y;
-    ctx.drawImage(Img.map, x, y);
+    var player = Player.list[selfId];
+    var x = WIDTH / 2 - player.x;
+    var y = HEIGHT / 2 - player.y;
+    ctx.drawImage(Img.map[player.map], x, y);
 };
 
 var drawScore = function () {
