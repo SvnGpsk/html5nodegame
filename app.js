@@ -58,8 +58,8 @@ var Entity = function (param) {
 
 var Player = function (param) {
     var self = Entity(param);
-
     self.number = "" + Math.floor(10 * Math.random());
+    self.username = param.username;
     self.pressingRight = false;
     self.pressingLeft = false;
     self.pressingUp = false;
@@ -103,8 +103,7 @@ var Player = function (param) {
         }
         if (self.pressingUp) {
             self.spdY = -self.maxSpd;
-        }
-        else if (self.pressingDown) {
+        } else if (self.pressingDown) {
             self.spdY = self.maxSpd;
         } else {
             self.spdY = 0;
@@ -129,7 +128,8 @@ var Player = function (param) {
             x: self.x,
             y: self.y,
             hp: self.hp,
-            score: self.score
+            score: self.score,
+            map: self.map
         }
     };
 
@@ -141,10 +141,11 @@ var Player = function (param) {
 
 Player.list = {};
 
-Player.onConnect = function (socket) {
+Player.onConnect = function (socket, username) {
     var map = 'galaxy';
 
     var player = Player({
+        username: username,
         id: socket.id,
         map: map
     });
@@ -163,11 +164,38 @@ Player.onConnect = function (socket) {
             player.mouseAngle = data.state;
         }
     });
+    socket.on('changeMap', function () {
+        if (player.map === 'galaxy') {
+            player.map = 'field'
+        } else {
+            player.map = 'galaxy'
+        }
+    });
 
     socket.emit('init', {
         player: Player.getAllInitPack(),
         bullet: Bullet.getAllInitPack(),
         selfId: socket.id
+    });
+    
+    socket.on('sendMsgToServer', function (data) {
+        for (var i in SOCKET_LIST) {
+            SOCKET_LIST[i].emit('addToChat', player.username + ': ' + data);
+        }
+    });
+    socket.on('sendPmToServer', function (data) {
+        var recipientSocket = null;
+        for(var i in Player.list){
+            if(Player.list[i].username === data.username){
+                recipientSocket = SOCKET_LIST[i];
+            }
+        }
+        if(recipientSocket === null){
+            socket.emit('addToChat', 'The player ' + data.username + ' is not online.');
+        }else{
+            recipientSocket.emit('addToChat','From '+ player.username + ':'+ data.message);
+            socket.emit('addToChat','To '+ data.username + ':'+ data.message);
+        }
     });
 };
 
@@ -277,7 +305,10 @@ Bullet.update = function () {
 };
 
 var isValidPassword = function (data, cb) {
-    db.account.find({username: data.username, password: data.password}, function (err, res) {
+    db.account.find({
+        username: data.username,
+        password: data.password
+    }, function (err, res) {
         if (res.length > 0) {
             cb(true);
         } else {
@@ -287,7 +318,9 @@ var isValidPassword = function (data, cb) {
 };
 
 var isUsernameTaken = function (data, cb) {
-    db.account.find({username: data.username}, function (err, res) {
+    db.account.find({
+        username: data.username
+    }, function (err, res) {
         if (res.length > 0) {
             cb(true);
         } else {
@@ -297,7 +330,10 @@ var isUsernameTaken = function (data, cb) {
 };
 
 var addUser = function (data, cb) {
-    db.account.insert({username: data.username, password: data.password}, function (err) {
+    db.account.insert({
+        username: data.username,
+        password: data.password
+    }, function (err) {
         cb();
     });
 };
@@ -309,20 +345,28 @@ io.sockets.on('connection', function (socket) {
     socket.on('signIn', function (data) {
         isValidPassword(data, function (res) {
             if (res) {
-                Player.onConnect(socket);
-                socket.emit('signInResponse', {success: true});
+                Player.onConnect(socket, data.username);
+                socket.emit('signInResponse', {
+                    success: true
+                });
             } else {
-                socket.emit('signInResponse', {success: false});
+                socket.emit('signInResponse', {
+                    success: false
+                });
             }
         });
     });
     socket.on('signUp', function (data) {
         isUsernameTaken(data, function (res) {
             if (res) {
-                socket.emit('signUpResponse', {success: false});
+                socket.emit('signUpResponse', {
+                    success: false
+                });
             } else {
                 addUser(data, function () {
-                    socket.emit('signUpResponse', {success: true});
+                    socket.emit('signUpResponse', {
+                        success: true
+                    });
                 });
             }
         });
@@ -333,12 +377,7 @@ io.sockets.on('connection', function (socket) {
         Player.onDisconnect(socket);
     });
 
-    socket.on('sendMsgToServer', function (data) {
-        var playerName = ('' + socket.id).slice(2, 7);
-        for (var i in SOCKET_LIST) {
-            SOCKET_LIST[i].emit('addToChat', playerName + ': ' + data);
-        }
-    });
+
 
     socket.on('evalServer', function (data) {
         if (DEBUG) {
@@ -350,12 +389,16 @@ io.sockets.on('connection', function (socket) {
             }
         }
     })
-
-
 });
 
-var initPack = {player: [], bullet: []};
-var removePack = {player: [], bullet: []};
+var initPack = {
+    player: [],
+    bullet: []
+};
+var removePack = {
+    player: [],
+    bullet: []
+};
 
 setInterval(function () {
     var pack = {
@@ -376,4 +419,3 @@ setInterval(function () {
 
 
 }, 1000 / 25);
-

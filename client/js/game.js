@@ -10,9 +10,9 @@ Img.bullet = new Image();
 Img.bullet.src = '/client/img/bullet.png';
 Img.map = {};
 Img.map['galaxy'] = new Image();
-Img.map['galaxy'].src = '/client/img/map.png';
+Img.map['galaxy'].src = '/client/img/galaxy.png';
 Img.map['field'] = new Image();
-Img.map['field'].src = '/client/img/map.png';
+Img.map['field'].src = '/client/img/field.png';
 
 var WIDTH = 500;
 var HEIGHT = 500;
@@ -21,7 +21,8 @@ var chatText = document.getElementById('chat-text');
 var chatInput = document.getElementById('chat-input');
 var chatForm = document.getElementById('chat-form');
 var ctx = document.getElementById("ctx").getContext("2d");
-ctx.font = '30px Arial';
+var ctxUi = document.getElementById("ctx-ui").getContext("2d");
+ctxUi.font = '30px Arial';
 
 //init
 var Player = function (initPack) {
@@ -38,7 +39,7 @@ var Player = function (initPack) {
     Player.list[self.id] = self;
 
     self.draw = function () {
-        if(Player.list[selfId].map !== self.map){
+        if (Player.list[selfId].map !== self.map) {
             return;
         }
         var x = self.x - Player.list[selfId].x + WIDTH / 2;
@@ -69,7 +70,7 @@ var Bullet = function (initPack) {
     Bullet.list[self.id] = self;
 
     self.draw = function () {
-        if(Player.list[selfId].map !== self.map){
+        if (Player.list[selfId].map !== self.map) {
             return;
         }
         var width = Img.player.width / 8;
@@ -117,6 +118,9 @@ socket.on('update', function (data) {
             }
             if (pack.score !== undefined) {
                 p.score = pack.score;
+            } 
+            if (pack.map !== undefined) {
+                p.map = pack.map;
             }
         }
     }
@@ -167,51 +171,89 @@ var drawMap = function () {
 };
 
 var drawScore = function () {
-    ctx.fillStyle = 'green';
-    ctx.fillText(Player.list[selfId].score, 0, 30);
+    if (lastScore === Player.list[selfId].score) {
+        return;
+    }
+    lastScore = Player.list[selfId].score;
+    ctxUi.clearRect(0, 0, 500, 500);
+    ctxUi.fillStyle = 'red';
+    ctxUi.fillText(Player.list[selfId].score, 0, 30);
 };
+
+var lastScore = null;
 
 document.onkeydown = function (event) {
     if (event.keyCode === 68) { //d
-        socket.emit('keyPress', {inputId: 'right', state: true});
-    }
-    else if (event.keyCode === 83) { //s
-        socket.emit('keyPress', {inputId: 'down', state: true});
-    }
-    else if (event.keyCode === 65) { //a
-        socket.emit('keyPress', {inputId: 'left', state: true});
-    }
-    else if (event.keyCode === 87) { //w
-        socket.emit('keyPress', {inputId: 'up', state: true});
+        socket.emit('keyPress', {
+            inputId: 'right',
+            state: true
+        });
+    } else if (event.keyCode === 83) { //s
+        socket.emit('keyPress', {
+            inputId: 'down',
+            state: true
+        });
+    } else if (event.keyCode === 65) { //a
+        socket.emit('keyPress', {
+            inputId: 'left',
+            state: true
+        });
+    } else if (event.keyCode === 87) { //w
+        socket.emit('keyPress', {
+            inputId: 'up',
+            state: true
+        });
     }
 };
 
 document.onkeyup = function (event) {
     if (event.keyCode === 68) { //d
-        socket.emit('keyPress', {inputId: 'right', state: false});
-    }
-    else if (event.keyCode === 83) { //s
-        socket.emit('keyPress', {inputId: 'down', state: false});
-    }
-    else if (event.keyCode === 65) { //a
-        socket.emit('keyPress', {inputId: 'left', state: false});
-    }
-    else if (event.keyCode === 87) { //w
-        socket.emit('keyPress', {inputId: 'up', state: false});
+        socket.emit('keyPress', {
+            inputId: 'right',
+            state: false
+        });
+    } else if (event.keyCode === 83) { //s
+        socket.emit('keyPress', {
+            inputId: 'down',
+            state: false
+        });
+    } else if (event.keyCode === 65) { //a
+        socket.emit('keyPress', {
+            inputId: 'left',
+            state: false
+        });
+    } else if (event.keyCode === 87) { //w
+        socket.emit('keyPress', {
+            inputId: 'up',
+            state: false
+        });
     }
 };
 
 document.onmousedown = function (event) {
-    socket.emit('keyPress', {inputId: 'attack', state: true});
+    socket.emit('keyPress', {
+        inputId: 'attack',
+        state: true
+    });
 };
 
 document.onmouseup = function (event) {
-    socket.emit('keyPress', {inputId: 'attack', state: false});
+    socket.emit('keyPress', {
+        inputId: 'attack',
+        state: false
+    });
 };
 
 document.onmousemove = function (event) {
     var x = -250 + event.clientX - 8;
     var y = -250 + event.clientY - 8;
     var angle = Math.atan2(y, x) / Math.PI * 180;
-    socket.emit('keyPress', {inputId: 'mouseAngle', state: angle});
+    socket.emit('keyPress', {
+        inputId: 'mouseAngle',
+        state: angle
+    });
+};
+
+document.oncontextmenu = function (event) {
+    event.preventDefault();
 };
