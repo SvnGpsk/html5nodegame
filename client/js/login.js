@@ -3,6 +3,8 @@
  */
     //sign
 var socket = io();
+var WIDTH = 500;
+var HEIGHT = 500;
 
 var signDiv = document.getElementById('signDiv');
 var signDivUsername = document.getElementById('signDiv-username');

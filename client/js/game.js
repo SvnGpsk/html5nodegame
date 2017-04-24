@@ -8,18 +8,13 @@ Img.player = new Image();
 Img.player.src = '/client/img/player.png';
 Img.bullet = new Image();
 Img.bullet.src = '/client/img/bullet.png';
+
 Img.map = {};
 Img.map['galaxy'] = new Image();
 Img.map['galaxy'].src = '/client/img/galaxy.png';
 Img.map['field'] = new Image();
 Img.map['field'].src = '/client/img/field.png';
 
-var WIDTH = 500;
-var HEIGHT = 500;
-
-var chatText = document.getElementById('chat-text');
-var chatInput = document.getElementById('chat-input');
-var chatForm = document.getElementById('chat-form');
 var ctx = document.getElementById("ctx").getContext("2d");
 var ctxUi = document.getElementById("ctx-ui").getContext("2d");
 ctxUi.font = '30px Arial';
@@ -35,8 +30,6 @@ var Player = function (initPack) {
     self.hpMax = initPack.hpMax;
     self.score = initPack.score;
     self.map = initPack.map;
-
-    Player.list[self.id] = self;
 
     self.draw = function () {
         if (Player.list[selfId].map !== self.map) {
@@ -56,9 +49,11 @@ var Player = function (initPack) {
             x - width / 8, y - height / 8, width, height);
 
     };
+    Player.list[self.id] = self;
 
     return self;
 };
+
 Player.list = {};
 
 var Bullet = function (initPack) {
@@ -67,7 +62,6 @@ var Bullet = function (initPack) {
     self.x = initPack.x;
     self.y = initPack.y;
     self.map = initPack.map;
-    Bullet.list[self.id] = self;
 
     self.draw = function () {
         if (Player.list[selfId].map !== self.map) {
@@ -82,7 +76,7 @@ var Bullet = function (initPack) {
         ctx.drawImage(Img.bullet, 0, 0, Img.bullet.width, Img.bullet.height,
             x - width / 8, y - height / 8, width, height)
     };
-
+    Bullet.list[self.id] = self;
     return self;
 };
 Bullet.list = {};
@@ -118,7 +112,7 @@ socket.on('update', function (data) {
             }
             if (pack.score !== undefined) {
                 p.score = pack.score;
-            } 
+            }
             if (pack.map !== undefined) {
                 p.map = pack.map;
             }
